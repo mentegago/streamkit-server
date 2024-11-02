@@ -41,14 +41,6 @@ interface AccessTokenResponse {
   token_type: string;
 }
 
-// User info cache
-interface CachedUserInfo {
-  data: TwitchUser;
-  expiry: number;
-}
-
-const userCache: { [username: string]: CachedUserInfo } = {};
-
 /**
 * Fetches a new app access token from Twitch API
 */
@@ -79,13 +71,6 @@ async function getAppAccessToken(): Promise<void> {
 * @param username - Twitch username
 */
 export async function getUserInfo(username: string): Promise<TwitchUser | null> {
-  // Check if the user data is in cache and not expired
-  const cachedData = userCache[username];
-  if (cachedData && Date.now() < cachedData.expiry) {
-    console.log(`Serving cached data for user: ${username}`);
-    return cachedData.data;
-  }
-  
   // Refresh the app access token if it doesn't exist or is expired
   if (!appAccessToken || (tokenExpiry && Date.now() >= tokenExpiry)) {
     await getAppAccessToken();
@@ -115,15 +100,8 @@ export async function getUserInfo(username: string): Promise<TwitchUser | null> 
   
   // Remove 'view_count' from the data
   delete userData.view_count;
-  
-  // Cache the data for one week (in milliseconds)
-  const oneWeek = 24 * 60 * 60 * 1000;
-  userCache[username] = {
-    data: userData,
-    expiry: Date.now() + oneWeek,
-  };
 
-  console.log(`Serving fresh data for user: ${username}`);
+  console.log(`Serving for user: ${username}`);
   
   return userData;
 }
